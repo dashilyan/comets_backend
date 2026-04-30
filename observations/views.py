@@ -1,3 +1,6 @@
+import logging
+import threading
+
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
@@ -20,6 +23,8 @@ from .serializers import (
     PhotoSerializer, CalculationSerializer,
     UserFavoriteSerializer, RecognitionTaskSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # ==================== АУТЕНТИФИКАЦИЯ ====================
@@ -432,12 +437,19 @@ def reject_observation(request, observation_id):
     return Response({'message': 'Наблюдение отклонено'})
 
 
-# ==================== YOLOv8 РАСПОЗНАВАНИЕ ====================
+# ==================== РАСПОЗНАВАНИЕ И РАСЧЁТ ОРБИТЫ ====================
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def start_recognition(request, observation_id):
-    """Запуск задачи распознавания кометы на фото (заглушка для интеграции YOLOv8)."""
+    """
+    Запуск пайплайна: ONNX-детекция кометы на каждом фото наблюдения,
+    перевод пиксельных координат в экваториальные (RA/Dec), вычисление
+    орбитальных параметров (a, e, i, Ω, ω, T) и сохранение в Calculation.
+
+    Возвращает 202 немедленно; вычисления выполняются в фоновом потоке.
+    Статус и результаты доступны через GET /observations/{id}/recognition/.
+    """
     try:
         observation = Observation.objects.get(pk=observation_id, user=request.user)
     except Observation.DoesNotExist:
@@ -446,18 +458,29 @@ def start_recognition(request, observation_id):
     if not observation.photos.exists():
         return Response({'error': 'У наблюдения нет фотографий'}, status=status.HTTP_400_BAD_REQUEST)
 
-    import time
-    task_id = f'recognition_{observation_id}_{int(time.time())}'
+    if not observation.telescope.focal_length:
+        return Response(
+            {'error': 'У телескопа не указана фокусная длина — необходима для астрометрии'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
-    task = RecognitionTask.objects.create(
-        observation=observation,
-        task_id=task_id,
-        status='started',
-    )
+    from .services.pipeline import run_pipeline
 
-    # TODO: запустить celery-задачу с YOLOv8
+    def _run_bg():
+        try:
+            run_pipeline(observation_id)
+        except Exception as exc:
+            logger.exception("Background pipeline error for observation %d: %s", observation_id, exc)
 
-    return Response(RecognitionTaskSerializer(task).data, status=status.HTTP_202_ACCEPTED)
+    thread = threading.Thread(target=_run_bg, daemon=True)
+    thread.start()
+
+    # Возвращаем последний созданный task (run_pipeline создаёт его сам),
+    # но он может ещё не существовать в момент ответа — возвращаем статус-объект.
+    task = observation.recognition_tasks.order_by('-created_at').first()
+    if task:
+        return Response(RecognitionTaskSerializer(task).data, status=status.HTTP_202_ACCEPTED)
+    return Response({'message': 'Пайплайн запущен'}, status=status.HTTP_202_ACCEPTED)
 
 
 @api_view(['GET'])

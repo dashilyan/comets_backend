@@ -118,6 +118,13 @@ USE_TZ = True
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# ── ONNX-модель для распознавания комет ─────────────────────────────────────
+# Переопределить переменной окружения ONNX_MODEL_PATH или положить модель сюда.
+ONNX_MODEL_PATH = os.environ.get(
+    'ONNX_MODEL_PATH',
+    str(BASE_DIR / 'models' / 'model.onnx'),
+)
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',

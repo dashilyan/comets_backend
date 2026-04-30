@@ -102,6 +102,7 @@ class Photo(models.Model):
     # file_path хранит ключ объекта в MinIO (относительный путь внутри бакета)
     file_path = models.CharField(max_length=512, null=False)
     file_name = models.CharField(max_length=256, null=False)
+    taken_at = models.DateTimeField(null=True, blank=True)  # время съёмки кадра
     obs = models.ForeignKey(Observation, on_delete=models.CASCADE, null=False, related_name='photos')
 
     class Meta:
