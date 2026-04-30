@@ -7,6 +7,7 @@ from django.contrib.auth.hashers import make_password
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.utils import timezone
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
@@ -81,6 +82,7 @@ def auth_logout(request):
 
 # ==================== ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ ====================
 
+@ensure_csrf_cookie
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_profile(request):

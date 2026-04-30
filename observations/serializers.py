@@ -32,7 +32,7 @@ class UserStatsSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
-            'date_joined', 'profile',
+            'date_joined', 'is_staff', 'profile',
             'total_observations', 'public_observations', 'calculations_count',
         ]
 
