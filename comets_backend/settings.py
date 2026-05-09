@@ -7,7 +7,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-x%k=0r$%oo+frvdrj0$6u
 
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,192.168.3.53,0.0.0.0').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -56,11 +56,11 @@ WSGI_APPLICATION = 'comets_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'comets'),
-        'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'pass'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+        'NAME': 'comets_db',           # из POSTGRES_DB
+        'USER': 'comets_user',          # из POSTGRES_USER (не postgres!)
+        'PASSWORD': 'comets_pass',      # из POSTGRES_PASSWORD
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
