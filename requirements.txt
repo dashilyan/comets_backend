@@ -12,3 +12,6 @@ redis>=5.0
 
 # CORS
 django-cors-headers>=4.3
+
+# Env loading
+python-dotenv>=1.0

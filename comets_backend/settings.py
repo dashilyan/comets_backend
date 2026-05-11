@@ -1,13 +1,19 @@
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
+
+VM_HOST = os.environ.get('VM_HOST', 'localhost')
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-x%k=0r$%oo+frvdrj0$6ui06=$aehji=+zj)b*+^aj7q%n06d&')
 
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://localhost:3000').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -59,7 +65,7 @@ DATABASES = {
         'NAME': os.environ.get('DB_NAME', 'comets'),
         'USER': os.environ.get('DB_USER', 'postgres'),
         'PASSWORD': os.environ.get('DB_PASSWORD', 'pass'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'HOST': os.environ.get('DB_HOST', VM_HOST),
         'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
@@ -68,7 +74,7 @@ DATABASES = {
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.environ.get('REDIS_URL', 'redis://localhost:6379/0'),
+        'LOCATION': os.environ.get('REDIS_URL', f'redis://{VM_HOST}:6379/0'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },
@@ -82,7 +88,7 @@ SESSION_CACHE_ALIAS = 'default'
 AWS_ACCESS_KEY_ID = os.environ.get('MINIO_ACCESS_KEY', 'minioadmin')
 AWS_SECRET_ACCESS_KEY = os.environ.get('MINIO_SECRET_KEY', 'minioadmin')
 AWS_STORAGE_BUCKET_NAME = os.environ.get('MINIO_BUCKET', 'comets')
-AWS_S3_ENDPOINT_URL = os.environ.get('MINIO_ENDPOINT', 'http://localhost:9000')
+AWS_S3_ENDPOINT_URL = os.environ.get('MINIO_ENDPOINT', f'http://{VM_HOST}:9000')
 AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = None
 AWS_S3_VERIFY = False
