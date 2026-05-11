@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: comets-postgres
+    environment:
+      POSTGRES_DB: comets_db
+      POSTGRES_USER: comets_user
+      POSTGRES_PASSWORD: comets_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - comets-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: comets-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - comets-network
+
+  minio:
+    image: minio/minio
+    container_name: comets-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    networks:
+      - comets-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: comets-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com      # Email для входа в pgAdmin
+      PGADMIN_DEFAULT_PASSWORD: admin123            # Пароль для входа в pgAdmin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'           # Отключает лишние проверки
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'  # Не требует мастер-пароль
+    ports:
+      - "5050:80"                                   # Веб-интерфейс pgAdmin на порту 5050
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: unless-stopped
+    networks:
+      - comets-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+  pgadmin_data:     
+    driver: local
+
+networks:
+  comets-network:
+    driver: bridge 
