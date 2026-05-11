@@ -96,8 +96,14 @@ def _run(observation: Observation, task: RecognitionTask) -> dict | None:
         except Exception as exc:
             logger.warning("Skipping photo %s: %s", photo.file_name, exc)
 
-    if not detections:
-        raise ValueError("Comet not detected in any of the %d photos" % len(photos))
+    if len(detections) < 3:
+        observation.status = 'rejected'
+        observation.save(update_fields=['status'])
+        logger.warning(
+            "Observation %d: only %d comet detection(s) (< 3), auto-rejected",
+            observation.id, len(detections),
+        )
+        return None
 
     # Persist per-photo coordinates and average confidence in RecognitionResult
     all_coords = [
@@ -149,7 +155,7 @@ def _run(observation: Observation, task: RecognitionTask) -> dict | None:
         elements = compute_orbital_elements(ra_dec_list, times_jd)
 
     # --- Step 4: save Calculation ---
-    if elements:
+    if elements and observation.comet_id:
         Calculation.objects.update_or_create(
             obs=observation,
             defaults={

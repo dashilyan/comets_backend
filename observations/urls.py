@@ -18,6 +18,7 @@ urlpatterns = [
     # ── Телескопы ─────────────────────────────────────────────────────────────
     path('api/telescopes/', views.get_all_telescopes, name='all_telescopes'),
     path('api/telescopes/create/', views.create_telescope, name='create_telescope'),
+    path('api/telescopes/find-or-create/', views.find_or_create_telescope, name='find_or_create_telescope'),
 
     # ── Наблюдения (фиксированные пути — до параметрических) ─────────────────
     path('api/observations/create/', views.create_observation, name='create_observation'),

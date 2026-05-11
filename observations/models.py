@@ -66,7 +66,7 @@ class Observation(models.Model):
     status = models.CharField(max_length=16, null=False, choices=STATUS_CHOICES, default='draft')
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
-    comet = models.ForeignKey(Comet, on_delete=models.RESTRICT, null=False)
+    comet = models.ForeignKey(Comet, on_delete=models.SET_NULL, null=True, blank=True)
     telescope = models.ForeignKey(Telescope, on_delete=models.RESTRICT, null=False)
 
     class Meta:

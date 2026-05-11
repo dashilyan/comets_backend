@@ -122,11 +122,15 @@ def update_user_profile(request):
 def create_observation(request):
     """Создание наблюдения с загрузкой фото в MinIO и пересчётом avg-полей кометы."""
     try:
-        comet_id = request.data.get('comet_id')
         telescope_id = request.data.get('telescope_id')
+        comet_id = request.data.get('comet_id') or None  # опциональное поле
 
-        if not comet_id or not telescope_id:
-            return Response({'error': 'comet_id и telescope_id обязательны'}, status=status.HTTP_400_BAD_REQUEST)
+        if not telescope_id:
+            return Response({'error': 'telescope_id обязателен'}, status=status.HTTP_400_BAD_REQUEST)
+
+        photos = request.FILES.getlist('photos')
+        if len(photos) < 3:
+            return Response({'error': 'Необходимо загрузить минимум 3 фотографии'}, status=status.HTTP_400_BAD_REQUEST)
 
         observation = Observation.objects.create(
             date_obs=request.data.get('date_obs', timezone.now()),
@@ -140,7 +144,7 @@ def create_observation(request):
         )
 
         # Загрузка фото в MinIO
-        for file in request.FILES.getlist('photos'):
+        for file in photos:
             key = f'observations/{observation.id}/{file.name}'
             saved_key = default_storage.save(key, ContentFile(file.read()))
             Photo.objects.create(file_path=saved_key, file_name=file.name, obs=observation)
@@ -305,6 +309,14 @@ def get_all_observations(request):
     if comet_id:
         qs = qs.filter(comet_id=comet_id)
 
+    username = request.GET.get('username')
+    if username:
+        qs = qs.filter(user__username=username)
+
+    comet_search = request.GET.get('comet_search')
+    if comet_search:
+        qs = qs.filter(comet__official_name__icontains=comet_search)
+
     date_from = request.GET.get('date_from')
     if date_from:
         qs = qs.filter(date_obs__gte=date_from)
@@ -350,6 +362,30 @@ def create_telescope(request):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def find_or_create_telescope(request):
+    """Найти телескоп по model_name или создать новый (доступно всем авторизованным)."""
+    model_name = (request.data.get('model_name') or '').strip()
+    if not model_name:
+        return Response({'error': 'model_name обязателен'}, status=status.HTTP_400_BAD_REQUEST)
+
+    focal_length = request.data.get('focal_length')
+    manufacturer = request.data.get('manufacturer') or None
+
+    telescope, created = Telescope.objects.get_or_create(
+        model_name=model_name,
+        defaults={
+            'focal_length': focal_length,
+            'manufacturer': manufacturer,
+        },
+    )
+    return Response(
+        TelescopeSerializer(telescope).data,
+        status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+    )
 
 
 # ==================== ИЗБРАННОЕ ====================

@@ -79,7 +79,7 @@ class CalculationSerializer(serializers.ModelSerializer):
 
 
 class ObservationSerializer(serializers.ModelSerializer):
-    comet_name = serializers.CharField(source='comet.official_name', read_only=True)
+    comet_name = serializers.SerializerMethodField()
     telescope_model = serializers.CharField(source='telescope.model_name', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
     photos_count = serializers.SerializerMethodField()
@@ -91,6 +91,9 @@ class ObservationSerializer(serializers.ModelSerializer):
             'date_created', 'comet_id', 'comet_name', 'telescope_id',
             'telescope_model', 'user_id', 'username', 'notes', 'photos_count',
         ]
+
+    def get_comet_name(self, obj):
+        return obj.comet.official_name if obj.comet_id else None
 
     def get_photos_count(self, obj):
         return obj.photos.count()
