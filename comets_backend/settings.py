@@ -53,17 +53,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'comets_backend.wsgi.application'
 
 # ── PostgreSQL ──────────────────────────────────────────────────────────────
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'comets'),
-        'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'pass'),
+        'NAME': 'comets_db',           # из POSTGRES_DB
+        'USER': 'comets_user',          # из POSTGRES_USER (не postgres!)
+        'PASSWORD': 'comets_pass',      # из POSTGRES_PASSWORD
         'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+        'PORT': '5432',
     }
 }
-
 # ── Redis: кэш + сессии ─────────────────────────────────────────────────────
 CACHES = {
     'default': {
