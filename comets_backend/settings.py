@@ -134,3 +134,19 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
 }
+# ── CSRF настройки ─────────────────────────────────────────────────────
+CSRF_COOKIE_HTTPONLY = False  # Должен быть False, чтобы фронтенд мог читать csrf токен
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = False  # True только если HTTPS
+CSRF_USE_SESSIONS = False  # Хранить CSRF в куках, а не в сессии
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://192.168.3.53:5173',
+]
+
+# ── Сессии ─────────────────────────────────────────────────────────────
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_AGE = 3600 * 24 * 7  # неделя
