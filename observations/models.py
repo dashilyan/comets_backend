@@ -88,7 +88,7 @@ class Calculation(models.Model):
     orbital_period = models.FloatField(null=True, blank=True)
 
     obs = models.OneToOneField(Observation, on_delete=models.CASCADE, null=False, related_name='calculation')
-    comet = models.ForeignKey(Comet, on_delete=models.RESTRICT, null=False)
+    comet = models.ForeignKey(Comet, on_delete=models.RESTRICT, null=True, blank=True)
 
     class Meta:
         managed = True
