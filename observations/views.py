@@ -1,5 +1,6 @@
 import logging
 import threading
+from django.views.decorators.csrf import csrf_exempt
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -74,10 +75,19 @@ def auth_login(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@csrf_exempt
 def auth_logout(request):
     """Завершение сессии."""
+    request.session.flush()
     logout(request)
-    return Response({'message': 'Вы успешно вышли из системы'})
+    
+    # Сначала создаем response
+    response = Response({'message': 'Вы успешно вышли из системы'})
+    # Потом удаляем куки
+    response.delete_cookie('sessionid')
+    response.delete_cookie('csrftoken')
+    
+    return response
 
 
 # ==================== ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ ====================
