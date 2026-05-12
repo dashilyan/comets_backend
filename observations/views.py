@@ -146,7 +146,7 @@ def create_observation(request):
             date_obs=request.data.get('date_obs', timezone.now()),
             notes=request.data.get('notes', ''),
             coordinates=request.data.get('coordinates', ''),
-            is_public=str(request.data.get('is_public', 'false')).lower() in ('true', '1', 'yes'),
+            is_public=request.data.get('is_public', False),
             status='draft',
             user=request.user,
             comet_id=comet_id,

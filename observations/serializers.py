@@ -47,9 +47,20 @@ class UserStatsSerializer(serializers.ModelSerializer):
 
 
 class CometSerializer(serializers.ModelSerializer):
+    first_photo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Comet
         fields = '__all__'
+
+    def get_first_photo_url(self, obj):
+        photo = Photo.objects.filter(obs__comet=obj, obs__status='published').first()
+        if photo:
+            try:
+                return default_storage.url(photo.file_path)
+            except Exception:
+                return None
+        return None
 
 
 class TelescopeSerializer(serializers.ModelSerializer):
@@ -83,6 +94,7 @@ class ObservationSerializer(serializers.ModelSerializer):
     telescope_model = serializers.CharField(source='telescope.model_name', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
     photos_count = serializers.SerializerMethodField()
+    first_photo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Observation
@@ -90,6 +102,7 @@ class ObservationSerializer(serializers.ModelSerializer):
             'id', 'date_obs', 'coordinates', 'is_public', 'status',
             'date_created', 'comet_id', 'comet_name', 'telescope_id',
             'telescope_model', 'user_id', 'username', 'notes', 'photos_count',
+            'first_photo_url',
         ]
 
     def get_comet_name(self, obj):
@@ -97,6 +110,15 @@ class ObservationSerializer(serializers.ModelSerializer):
 
     def get_photos_count(self, obj):
         return obj.photos.count()
+
+    def get_first_photo_url(self, obj):
+        photo = obj.photos.first()
+        if photo:
+            try:
+                return default_storage.url(photo.file_path)
+            except Exception:
+                return None
+        return None
 
 
 class ObservationDetailSerializer(serializers.ModelSerializer):
