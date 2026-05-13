@@ -313,7 +313,14 @@ def get_comet_detail(request, comet_id):
 @api_view(['GET'])
 def get_all_observations(request):
     """Публичный каталог наблюдений с фильтрацией и пагинацией."""
-    qs = Observation.objects.filter(is_public=True, status='published').select_related('comet', 'telescope', 'user')
+    is_staff = request.user.is_authenticated and request.user.is_staff
+    if is_staff:
+        qs = Observation.objects.all().select_related('comet', 'telescope', 'user')
+        status_filter = request.GET.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+    else:
+        qs = Observation.objects.filter(is_public=True, status='published').select_related('comet', 'telescope', 'user')
 
     comet_id = request.GET.get('comet_id')
     if comet_id:
