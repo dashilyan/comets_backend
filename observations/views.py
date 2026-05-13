@@ -219,7 +219,9 @@ def get_observation_detail(request, observation_id):
     except Observation.DoesNotExist:
         return Response({'error': 'Наблюдение не найдено'}, status=status.HTTP_404_NOT_FOUND)
 
-    if not observation.is_public and (not request.user.is_authenticated or observation.user != request.user):
+    is_owner = request.user.is_authenticated and observation.user == request.user
+    is_staff = request.user.is_authenticated and request.user.is_staff
+    if not observation.is_public and not is_owner and not is_staff:
         return Response({'error': 'У вас нет доступа к этому наблюдению'}, status=status.HTTP_403_FORBIDDEN)
 
     return Response(ObservationDetailSerializer(observation).data)
