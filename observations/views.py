@@ -176,6 +176,18 @@ def create_observation(request):
                 comet_id=comet_id,
             )
 
+        # Автозапуск распознавания в фоне если телескоп имеет focal_length
+        if observation.telescope and observation.telescope.focal_length:
+            from .services.pipeline import run_pipeline
+
+            def _run_bg(obs_id: int):
+                try:
+                    run_pipeline(obs_id)
+                except Exception as exc:
+                    logger.warning("Auto-pipeline error for obs %d: %s", obs_id, exc)
+
+            threading.Thread(target=_run_bg, args=(observation.id,), daemon=True).start()
+
         return Response(ObservationDetailSerializer(observation).data, status=status.HTTP_201_CREATED)
 
     except Exception as e:
