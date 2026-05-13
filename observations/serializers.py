@@ -127,10 +127,33 @@ class ObservationDetailSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     photos = PhotoSerializer(many=True, read_only=True)
     calculation = CalculationSerializer(read_only=True)
+    recognition = serializers.SerializerMethodField()
 
     class Meta:
         model = Observation
         fields = '__all__'
+
+    def get_recognition(self, obj):
+        task = obj.recognition_tasks.filter(status='completed').order_by('-created_at').first()
+        if not task:
+            return None
+        result = getattr(task, 'result', None)
+        if not result:
+            return None
+        detections = []
+        for det in (result.coordinates or []):
+            recognized_url = None
+            if det.get('recognized_path'):
+                try:
+                    recognized_url = default_storage.url(det['recognized_path'])
+                except Exception:
+                    pass
+            detections.append({**det, 'recognized_url': recognized_url})
+        return {
+            'confidence': result.confidence,
+            'recognized_at': result.recognized_at.isoformat() if result.recognized_at else None,
+            'detections': detections,
+        }
 
 
 class UserFavoriteSerializer(serializers.ModelSerializer):

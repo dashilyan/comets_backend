@@ -15,13 +15,16 @@ It is designed to be called either:
   - from a background thread / Celery task (preferred for production).
 """
 
+import io
 import logging
 import time
 from datetime import timedelta
 
 from django.conf import settings
 from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 from astropy.time import Time
+from PIL import Image, ImageDraw
 
 from ..models import Calculation, Observation, RecognitionResult, RecognitionTask
 from .orbital import compute_orbital_elements, pixel_to_radec
@@ -105,17 +108,45 @@ def _run(observation: Observation, task: RecognitionTask) -> dict | None:
         )
         return None
 
-    # Persist per-photo coordinates and average confidence in RecognitionResult
-    all_coords = [
-        {
+    # Draw bounding boxes and save annotated images to MinIO
+    all_coords = []
+    for p, d in detections:
+        recognized_path = None
+        try:
+            bbox_w = d.get("bbox_w")
+            bbox_h = d.get("bbox_h")
+            if bbox_w and bbox_h:
+                with default_storage.open(p.file_path, "rb") as fh:
+                    image_bytes = fh.read()
+                img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+                draw = ImageDraw.Draw(img)
+                cx, cy = d["x"], d["y"]
+                x0 = cx - bbox_w / 2
+                y0 = cy - bbox_h / 2
+                x1 = cx + bbox_w / 2
+                y1 = cy + bbox_h / 2
+                draw.rectangle([x0, y0, x1, y1], outline="#00FF00", width=3)
+                buf = io.BytesIO()
+                img.save(buf, format="JPEG", quality=90)
+                save_path = f"observations/{observation.id}/recognized/{p.file_name}"
+                if default_storage.exists(save_path):
+                    default_storage.delete(save_path)
+                recognized_path = default_storage.save(save_path, ContentFile(buf.getvalue()))
+        except Exception as exc:
+            logger.warning("Could not annotate photo %s: %s", p.file_name, exc)
+
+        all_coords.append({
             "photo_id": p.id,
             "file_name": p.file_name,
             "x": d["x"],
             "y": d["y"],
+            "bbox_w": d.get("bbox_w"),
+            "bbox_h": d.get("bbox_h"),
             "confidence": d["confidence"],
-        }
-        for p, d in detections
-    ]
+            "img_width": d.get("width"),
+            "img_height": d.get("height"),
+            "recognized_path": recognized_path,
+        })
     avg_conf = sum(d["confidence"] for _, d in detections) / len(detections)
     RecognitionResult.objects.update_or_create(
         task=task,

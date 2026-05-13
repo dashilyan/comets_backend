@@ -74,13 +74,15 @@ class CometDetector:
         best_conf = CONF_THRESHOLD
         best = None
         for row in out:
-            cx, cy = float(row[0]), float(row[1])
+            cx, cy, bw, bh = float(row[0]), float(row[1]), float(row[2]), float(row[3])
             conf = float(np.max(row[4:])) if row.shape[0] > 5 else float(row[4])
             if conf > best_conf:
                 best_conf = conf
                 best = {
                     "x": cx / INPUT_SIZE * orig_w,
                     "y": cy / INPUT_SIZE * orig_h,
+                    "bbox_w": bw / INPUT_SIZE * orig_w,
+                    "bbox_h": bh / INPUT_SIZE * orig_h,
                     "confidence": conf,
                     "width": orig_w,
                     "height": orig_h,
