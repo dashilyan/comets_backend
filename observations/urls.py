@@ -13,6 +13,7 @@ urlpatterns = [
 
     # ── Кометы ────────────────────────────────────────────────────────────────
     path('api/comets/', views.get_all_comets, name='all_comets'),
+    path('api/comets/find-or-create/', views.find_or_create_comet, name='find_or_create_comet'),
     path('api/comets/<int:comet_id>/', views.get_comet_detail, name='comet_detail'),
 
     # ── Телескопы ─────────────────────────────────────────────────────────────

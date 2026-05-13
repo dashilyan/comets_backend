@@ -419,6 +419,26 @@ def find_or_create_telescope(request):
     )
 
 
+# ==================== КОМЕТЫ — создание/поиск ====================
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def find_or_create_comet(request):
+    """Найти комету по имени или создать новую запись."""
+    name = (request.data.get('official_name') or '').strip()
+    if not name:
+        return Response({'error': 'official_name обязателен'}, status=status.HTTP_400_BAD_REQUEST)
+
+    comet, created = Comet.objects.get_or_create(
+        official_name__iexact=name,
+        defaults={'official_name': name},
+    )
+    return Response(
+        CometSerializer(comet).data,
+        status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+    )
+
+
 # ==================== ИЗБРАННОЕ ====================
 
 @api_view(['GET'])
